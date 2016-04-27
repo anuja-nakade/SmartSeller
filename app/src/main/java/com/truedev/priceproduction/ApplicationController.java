@@ -9,9 +9,15 @@ import com.parse.ParseInstallation;
  * Created by Yash on 04/09/15.
  */
 public class ApplicationController extends Application {
+    private static ApplicationController instance;
+
+    public static ApplicationController getInstance() {
+        return instance;
+    }
 
     @Override
     public void onCreate() {
+        instance = this;
         super.onCreate();
 
         //Parse.initialize(this, "1202aqGgq09W8L9tCXrZOeUYE5ZBs0QpMHB7FCLq", "mI9pbjJwjrYZZrANNleIVi28nPtvHkYm7QxyHdDd");

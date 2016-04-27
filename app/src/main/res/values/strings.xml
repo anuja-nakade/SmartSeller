@@ -5,4 +5,5 @@
     <string name="action_settings">Settings</string>
     <string name="title_dialog_alert">Alert</string>
     <string name="title_dialog_confirm">Confirm</string>
+    <string name="title_activity_deep_link">DeepLinkActivity</string>
 </resources>

@@ -1,7 +1,6 @@
 package com.truedev.priceproduction;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -45,7 +44,8 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
                     ordersIntent.setAction("test");
                     ordersIntent.putExtra("notificationType", notificationType);
                     String action = "myOrders";
-                    String url = "http://sellers.mysmartprice.com/my_orders.php";
+                    //String url = "http://sellers.mysmartprice.com/my_orders.php";
+                    String url = "http://sellers.ravindra.mysmartprice.com/my_orders.php";
                     ordersIntent.putExtra("url", url);
                     ordersIntent.putExtra("action", action);
                     PendingIntent pOrdersIntent = PendingIntent.getActivity(context, 0, ordersIntent, 0);
@@ -58,7 +58,8 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
                     outOfStockIntent.setAction(productId);
                     outOfStockIntent.putExtra("notificationType", notificationType);
                     action = "outOfStock";
-                    url = "http://sellers.mysmartprice.com/mark_out_of_stock.php";
+                    //url = "http://sellers.mysmartprice.com/mark_out_of_stock.php";
+                    url = "http://sellers.ravindra.mysmartprice.com/mark_out_of_stock.php";
                     outOfStockIntent.putExtra("url", url);
                     outOfStockIntent.putExtra("action", action);
                     outOfStockIntent.putExtra("mspid", productId);
@@ -91,7 +92,7 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
 
                     Intent contentIntent = new Intent(context, MainActivity.class);
                     contentIntent.putExtra("notificationType", notificationType);
-                    String url = "http://sellers.mysmartprice.com/my_products.php";
+                    String url = "http://sellers.ravindra.mysmartprice.com/my_products.php";
                     contentIntent.putExtra("url", url);
                     contentIntent.putExtra("action", "my_products");
                     PendingIntent pContentIntent = PendingIntent.getActivity(context, 0, contentIntent, 0);
