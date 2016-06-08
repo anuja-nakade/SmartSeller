@@ -42,7 +42,6 @@ public class DeepLinkActivity extends Activity {
             String urlBase = deepLink.getPathSegments().get(0);
             BaseLink link = new BaseLink();
             switch(urlBase) {
-
                 case "my_leads":
                     String id;
                     if(pathSegmentsSize > 1) {

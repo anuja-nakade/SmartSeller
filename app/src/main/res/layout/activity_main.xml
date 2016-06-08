@@ -8,4 +8,10 @@
         android:layout_height="fill_parent"
     />
 
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:visibility="gone"/>
+
 </RelativeLayout>

@@ -104,6 +104,22 @@
 
 
         </activity>
+
+        <receiver
+            android:name="PushReceiver"
+            android:enabled="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+                <action android:name="com.google.android.c2dm.intent.REGISTER" />
+                <action android:name="com.msp.sellers.push.intent.OPEN" />
+
+                <action android:name="com.msp.sellers.push.intent.DELETE" />
+
+                <category android:name="com.truedev.priceproduction" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
