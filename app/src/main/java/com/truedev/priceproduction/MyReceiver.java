@@ -244,6 +244,31 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
 
                     return mBuilder.build();
 
+                } else if ("cpl_shopclosed".equals(notificationType)) {
+                    int leadCount = pushData.optInt("no_of_products");
+                    String url = "http://sellers.mysmartprice.com/my_leads.php?filter=shopclosed";
+                    Intent cplClosed = new Intent(ACTION_PUSH_OPEN);
+                    cplClosed.putExtra("notificationType", notificationType);
+                    cplClosed.putExtra("url",url);
+                    cplClosed.putExtra("isDeepLink", false);
+                    PendingIntent pShopClosedIntent = PendingIntent.getBroadcast(context, 0, cplClosed, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                    Intent deleteIntent = new Intent(ACTION_PUSH_DELETE);
+                    deleteIntent.putExtra("notificationType",notificationType);
+                    PendingIntent pDeleteIntent = PendingIntent.getBroadcast(context, 0, deleteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    NotificationCompat.Builder mBuilder =
+                            new NotificationCompat.Builder(context)
+                                    .setSmallIcon(R.drawable.msp_launch)
+                                    .setContentTitle("Just missed")
+                                    .setContentText("Your bid did not win ")
+                                    .setStyle(new NotificationCompat.BigTextStyle().bigText("You have received quotes for "+ leadCount +" products when your shop was closed from 9 PM - 12 PM. Click here to provide your bids. \n"))
+                                    .setAutoCancel(true)
+                                    .setDefaults(-1);
+
+                    mBuilder.setContentIntent(pShopClosedIntent).setDeleteIntent(pDeleteIntent);
+
+                    return mBuilder.build();
+
                 } else if ("price_expiry".equals(notificationType)) {
 
                     String title = pushData.optString("title");
