@@ -259,9 +259,9 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
                     NotificationCompat.Builder mBuilder =
                             new NotificationCompat.Builder(context)
                                     .setSmallIcon(R.drawable.msp_launch)
-                                    .setContentTitle("Just missed")
-                                    .setContentText("Your bid did not win ")
-                                    .setStyle(new NotificationCompat.BigTextStyle().bigText("You have received quotes for "+ leadCount +" products when your shop was closed from 9 PM - 12 PM. Click here to provide your bids. \n"))
+                                    .setContentTitle("Shop closed leads")
+                                    .setContentText("You have received quotes ")
+                                    .setStyle(new NotificationCompat.BigTextStyle().bigText("You have received quotes for " + leadCount + " products when your shop was closed from 9 PM - 12 PM. Click here to provide your bids. \n"))
                                     .setAutoCancel(true)
                                     .setDefaults(-1);
 
